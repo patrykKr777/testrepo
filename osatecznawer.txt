@@ -1,0 +1,109 @@
+.PROGRAM program0()
+
+        a = 40
+        b = 60
+        ab = a+5
+        bb = b+5
+        alfa = ACOS(a/(2*b))
+        beta = ACOS((b-a)/(2*a))
+
+
+
+        DECOMPOSE t1[] = p5000  ;punkt domowy          
+        DECOMPOSE t2[] = p5001  ;punkt bezpieczenswtwa     
+        DECOMPOSE t3[] = p5002  ;drugi punkt bezpieczenstwa
+        DECOMPOSE t4[] = p5011  ;punkt odniesienia przy zabieraniu 
+        DECOMPOSE t5[] = p5012  ;punkt odnesienia przy upuszczaniu 
+;ustawienie naszego, lokalnego ukladu wspolrzednych
+        SET p5013 = TRANS(t1[0],t1[1],t1[2],0,180,0)            ;punkt domowy
+        SET p5014 = TRANS(t2[0],t2[1],t2[2],0,180,0)            ;punkt bezpieczenstwa
+        SET p5015 = TRANS(t3[0],t3[1],t3[2],0,180,0)            ;drugi punkt bezpieczenstwa   
+        SET p5016 = TRANS(t4[0],t4[1],t4[2],0,180,-90-25)               ;punkt odniesienia przy zabieraniu
+        SET p5017 = TRANS(t5[0],t5[1],t5[2],0,180,-90-15)                ;punkt odnesienia przy upuszczaniu
+
+        FOR k = 0 TO 5                  ;petle wykonujace program
+            FOR w = 0 TO 5
+                pocz[k,w] = 0
+                konc[k,w] = 0
+            END
+        END
+        pocz[0,0] = -a   ;wspolrzedne poczatkowe klocka 1
+        pocz[0,1] = (a+b)/2
+
+        pocz[1,0] = -((a+b)/2)    ;wspolrzedne poczatkowe klocka 2
+        pocz[1,1] = 0
+        pocz[1,5] = -90
+
+        pocz[2,0] = 0     ;wspolrzedne poczatkowe klocka 3
+        pocz[2,1] = 0
+
+
+        pocz[3,0] = 0.5*b*SIN(alfa)+a/(2*TAN(alfa))+b/2  ;wspolrzedne poczatkowe klocka 4
+        pocz[3,1] = 0.25*a+a/(2*SIN(alfa))
+        pocz[3,5] = 90+alfa
+
+        pocz[4,0] = -a    ;wspolrzedne poczatkowe klocka 5
+        pocz[4,1] = -((a+b)/2)
+
+        pocz[5,0] = 0.5*b*SIN(alfa)+a/(2*TAN(alfa))+b/2 ;wspolrzedne poczatkowe klocka 6
+        pocz[5,1] = -(0.25*a+a/(2*SIN(alfa)))
+        pocz[5,5] = 90-alfa
+
+        konc[0,0] = 0 ;wspolrzedne koncowe klocka 1
+        konc[0,1] = -(ab+bb)/2
+        konc[0,5] = 90
+
+        konc[1,0] = 0 ;wspolrzedne koncowe klocka 2
+        konc[1,1] = 0
+        konc[1,5] = 0
+
+        konc[2,0] = bb/2+0.5*ab*SIN(beta)+0.5*bb*COS(beta) ;wspolrzedne koncowe klocka 3
+        konc[2,1] = ab/2+bb/(2*SIN(beta))
+        konc[2,5] = 270-beta
+
+        konc[3,0] = -(bb/2+0.5*ab*SIN(beta)+0.5*bb*COS(beta)) ;wspolrzedne koncowe klocka 4
+        konc[3,1] = ab/2+bb/(2*SIN(beta))
+        konc[3,5] = 90+beta
+
+        konc[4,0] = 0     ;wspolrzedne koncowe klocka 5
+        konc[4,1] = 0.5*bb+ab*SIN(beta)+ab*0.5
+        konc[4,5] = 90
+
+        konc[5,0] = 0   ;wspolrzedne koncowe klocka 6
+        konc[5,1] = bb+ab*SIN(beta)+ab
+        konc[5,5] = 0
+;program w petli
+        MOVE p5013      ;dojazd do punktu domowego
+        FOR w = 0 TO 5
+                ;ustawienie punktow zabierania i upuszczania w zaleznosci od numeru petli
+            SET p5018 = p5016:TRANS(pocz[w,0],pocz[w,1],pocz[w,2],pocz[w,3],pocz[w,4],pocz[w,5])
+            SET p5019 = p5017:TRANS(konc[w,0],konc[w,1],konc[w,2],konc[w,3],konc[w,4],konc[w,5])
+
+            MOVE p5014  ;dojazd do punktu bezpieczenstwa
+            APPRO p5018, a+20   ;dojazd nad punkt zabrania, z zapasem wysokosci 
+            BREAK
+            MOVES p5018         ;dojazd nad punkt zabrania
+            BREAK
+            SIGNAL 1            ;chwycenie klocka
+            DELAY 1
+            DEPARTS a+20       ;dojazd nad punkt zabrania, z zapasem wysokosci
+            BREAK
+            MOVE p5014          ;dojazd do punktu bezpieczenstwa
+            MOVE p5015          ;dojazd do drugiego punktu bezpieczenstwa
+            APPRO p5019, a+20   ;dojazd nad punkt upuszcenia, z zapasem wysokosci
+            BREAK
+            MOVES p5019         ;dojazd nad punkt upuszcenia
+	    BREAK
+            SIGNAL -1           ;upuszczenie klocka
+            DELAY 1
+            DEPARTS a+20        ;dojazd o 20 wzwyz nad punkt upuszczenia 
+            BREAK
+            MOVE p5015          ;dojazd do punktu bezpieczenstwa
+            BREAK
+        END                     ;powtorzenie petli
+
+        MOVE p5013    ;powrot do punktu domowego
+
+
+
+.END
